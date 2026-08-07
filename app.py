@@ -670,7 +670,12 @@ with st.sidebar:
         )
         if st.button("📥 Load Selected Sample", use_container_width=True):
             if resume_option in SAMPLE_RESUMES:
-                st.session_state.resume_text = SAMPLE_RESUMES[resume_option]
+                sample = SAMPLE_RESUMES[resume_option]
+                # Update both the logical state AND the text_area widget key.
+                # Streamlit prioritizes the widget key over the `value=` argument,
+                # so without this the box stays empty after a successful load.
+                st.session_state.resume_text = sample
+                st.session_state.resume_content_area = sample
                 st.session_state.last_sample = resume_option
                 st.success(f"✅ Loaded: {resume_option}")
                 st.rerun()
@@ -752,7 +757,7 @@ if st.session_state.app_mode == "Persona Chatbot":
             try:
                 response = client.messages.create(
                     model="claude-haiku-4-5-20251001",
-                    max_tokens=3000,
+                    max_tokens=1500,
                     system=persona["system"],
                     messages=history,
                 )
@@ -791,7 +796,7 @@ else:
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
-                max_tokens=1600,
+                max_tokens=1500,
             )
             return r.choices[0].message.content.strip()
         except Exception as e:
@@ -916,9 +921,13 @@ else:
         st.markdown("#### 📄 Candidate Resume")
         if st.session_state.get("last_sample"):
             st.caption(f"**Loaded:** {st.session_state.last_sample}")
+        # Keep widget key and logical state in sync.
+        # Prefer the widget key if it already exists (user edits);
+        # otherwise seed from resume_text (e.g. after a sample load).
+        if "resume_content_area" not in st.session_state:
+            st.session_state.resume_content_area = st.session_state.get("resume_text", "")
         resume_text = st.text_area(
             "Resume Content",
-            value=st.session_state.resume_text,
             height=420,
             key="resume_content_area",
         )
