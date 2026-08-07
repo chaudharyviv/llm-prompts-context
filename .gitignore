@@ -36,7 +36,6 @@ pyvenv.cfg
 *~
 
 # Streamlit
-.secrets.toml
 .streamlit/secrets.toml
 
 # Environment variables

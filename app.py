@@ -586,16 +586,12 @@ if "active_persona" not in st.session_state:
     st.session_state.active_persona = "Infrastructure Engineer"
 if "chat_histories" not in st.session_state:
     st.session_state.chat_histories = {k: [] for k in PERSONAS}
-if "temperature" not in st.session_state:
-    st.session_state.temperature = 0.7
 if "resume_text" not in st.session_state:
     st.session_state.resume_text = ""
 if "jd_text" not in st.session_state:
     st.session_state.jd_text = ""
 if "last_sample" not in st.session_state:
     st.session_state.last_sample = None
-if "resume_temperature" not in st.session_state:
-    st.session_state.resume_temperature = 0.1
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SIDEBAR — Mode switch + context-specific controls
@@ -644,14 +640,6 @@ with st.sidebar:
                 st.rerun()
 
         st.markdown("---")
-        st.markdown("### ⚙️ Parameters")
-        st.session_state.temperature = st.slider(
-            "🌡️ Temperature",
-            0.0,
-            1.0,
-            st.session_state.temperature,
-            0.05,
-        )
         if st.button("🗑️ Clear Chat", use_container_width=True):
             st.session_state.chat_histories[st.session_state.active_persona] = []
             st.rerun()
@@ -688,14 +676,6 @@ with st.sidebar:
                 st.rerun()
 
         st.divider()
-        st.markdown("### ⚙️ Settings")
-        st.session_state.resume_temperature = st.slider(
-            "Temperature",
-            0.0,
-            1.0,
-            st.session_state.resume_temperature,
-            key="resume_temp_slider",
-        )
         evaluate_btn = st.button(
             "🔍 Evaluate Candidate",
             type="primary",
@@ -726,12 +706,6 @@ if st.session_state.app_mode == "Persona Chatbot":
         st.title(persona["name"])
         st.caption(f"{persona['role']} • {persona['user_label']}")
 
-    st.markdown(
-        f"""
-    <span class="param-badge">🌡️ temp={st.session_state.temperature:.2f} (active)</span>
-    """,
-        unsafe_allow_html=True,
-    )
     st.markdown("---")
 
     st.subheader("📋 System Prompt")
@@ -779,7 +753,6 @@ if st.session_state.app_mode == "Persona Chatbot":
                 response = client.messages.create(
                     model="claude-haiku-4-5-20251001",
                     max_tokens=3000,
-                    temperature=st.session_state.temperature,
                     system=persona["system"],
                     messages=history,
                 )
@@ -807,7 +780,7 @@ if st.session_state.app_mode == "Persona Chatbot":
 # ═══════════════════════════════════════════════════════════════════════════════
 else:
     # Helper functions (local to this mode)
-    def ask_gpt(system: str, user: str, temperature: float = 0.1):
+    def ask_gpt(system: str, user: str):
         oai = get_openai_client()
         if not oai:
             return "❌ OpenAI client not initialized."
@@ -818,7 +791,6 @@ else:
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
-                temperature=temperature,
                 max_tokens=1600,
             )
             return r.choices[0].message.content.strip()
@@ -894,9 +866,9 @@ else:
             "NOT SELECTED": "❌",
         }.get(verdict, "❓")
 
-    def scan_resume(jd_text: str, resume_text: str, temperature: float = 0.1):
+    def scan_resume(jd_text: str, resume_text: str):
         prompt = f"JOB DESCRIPTION:\n{jd_text}\n\nCANDIDATE RESUME:\n{resume_text}"
-        raw_response = ask_gpt(RESUME_SCANNER_SYSTEM, prompt, temperature)
+        raw_response = ask_gpt(RESUME_SCANNER_SYSTEM, prompt)
         if "❌ Error" in raw_response:
             return {"error": raw_response}
         result = parse_evaluation_response(raw_response)
@@ -960,11 +932,7 @@ else:
             st.error("Please provide both Job Description and Resume")
         else:
             with st.spinner("🔍 Analyzing with AI..."):
-                result = scan_resume(
-                    jd_text,
-                    resume_text,
-                    st.session_state.resume_temperature,
-                )
+                result = scan_resume(jd_text, resume_text)
 
             if "error" in result:
                 st.error(result["error"])
