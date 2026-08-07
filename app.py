@@ -598,7 +598,7 @@ if "last_sample" not in st.session_state:
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("## 🛠️ Workshop AI Toolkit")
-    st.caption("Week 1 + Week 2 combined")
+    
     st.divider()
 
     st.markdown("### 🔀 App Mode")
@@ -885,7 +885,7 @@ else:
         '<h1 style="text-align:center;"><span class="gradient-text">🎯 Resume Scanner Pro</span></h1>',
         unsafe_allow_html=True,
     )
-    st.caption("AI-Powered Candidate Evaluation • Clear Decision Reasoning")
+    st.caption("AI-Powered Candidate Evaluation - Clear Decision Reasoning")
     st.divider()
 
     # Re-read selected_role from the radio that lives in the sidebar
